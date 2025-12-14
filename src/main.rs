@@ -2,6 +2,8 @@
 
 use actix_web::{web, App, HttpServer};
 use mongodb::{Client, options::ClientOptions};
+use actix_cors::Cors; // DITAMBAHKAN: Untuk mengizinkan permintaan dari frontend
+use std::env; // DITAMBAHKAN: Untuk membaca Environment Variables (opsional tapi disarankan)
 
 // --- Deklarasi Modul Induk ---
 pub mod model;
@@ -27,8 +29,10 @@ use route::grade_route::{
 async fn main() -> std::io::Result<()> {
     
     // --- 1. INISIALISASI MONGODB ---
-    let uri = "mongodb://localhost:27017"; 
-    let client_options = ClientOptions::parse(uri)
+    // Gunakan Environment Variable atau fallback ke localhost
+    let uri = env::var("MONGO_URI").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
+    
+    let client_options = ClientOptions::parse(&uri) // Gunakan &uri
         .await
         .expect("Gagal mem-parsing URI MongoDB");
     
@@ -39,7 +43,18 @@ async fn main() -> std::io::Result<()> {
 
     // --- 2. JALANKAN WEB SERVER ---
     HttpServer::new(move || {
+        
+        // --- KONFIGURASI CORS ---
+        let cors = Cors::default()
+            // Izinkan semua origin (untuk development, HATI-HATI di Production)
+            // Di Production, ganti dengan .allowed_origin("http://localhost:3000") jika frontend Anda di 3000
+            .allow_any_origin()
+            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+            .allow_any_header()
+            .max_age(3600);
+        
         App::new()
+            .wrap(cors) // Terapkan CORS middleware
             .app_data(web::Data::new(client.clone()))
             
             .service(
@@ -52,18 +67,18 @@ async fn main() -> std::io::Result<()> {
                     .route("/students/{id}", web::delete().to(delete_student))// DELETE
                     
                     // Route 2: LESSON
-                    .route("/lessons", web::post().to(create_lesson))         // CREATE
-                    .route("/lessons", web::get().to(get_all_lessons))        // READ ALL
-                    .route("/lessons/{id}", web::get().to(get_lesson_by_id))  // READ BY ID
-                    .route("/lessons/{id}", web::put().to(update_lesson))     // UPDATE
-                    .route("/lessons/{id}", web::delete().to(delete_lesson))  // DELETE
+                    .route("/lessons", web::post().to(create_lesson))          // CREATE
+                    .route("/lessons", web::get().to(get_all_lessons))         // READ ALL
+                    .route("/lessons/{id}", web::get().to(get_lesson_by_id))   // READ BY ID
+                    .route("/lessons/{id}", web::put().to(update_lesson))      // UPDATE
+                    .route("/lessons/{id}", web::delete().to(delete_lesson))   // DELETE
 
                     // Route 3: GRADE
-                    .route("/grades", web::post().to(create_grade))           // CREATE
-                    .route("/grades", web::get().to(get_all_grades))          // READ ALL
-                    .route("/grades/{id}", web::get().to(get_grade_by_id))    // READ BY ID
-                    .route("/grades/{id}", web::put().to(update_grade))       // UPDATE
-                    .route("/grades/{id}", web::delete().to(delete_grade))    // DELETE
+                    .route("/grades", web::post().to(create_grade))            // CREATE
+                    .route("/grades", web::get().to(get_all_grades))           // READ ALL
+                    .route("/grades/{id}", web::get().to(get_grade_by_id))     // READ BY ID
+                    .route("/grades/{id}", web::put().to(update_grade))        // UPDATE
+                    .route("/grades/{id}", web::delete().to(delete_grade))     // DELETE
             )
     })
     .bind(("127.0.0.1", 8080))?
