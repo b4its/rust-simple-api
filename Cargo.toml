@@ -6,14 +6,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# MongoDB Driver
-mongodb = "3.4.1" # Versi yang dikoreksi
-bson = "2.15.0" # untuk ObjectId
-
-# Serialisasi/Deserialisasi
-serde = { version = "1.0", features = ["derive"] }
+# Web Framework
+actix-web = "4.0"
 # Async Runtime
 tokio = { version = "1.0", features = ["full"] } 
 futures = "0.3"
-# Web Framework
-actix-web = "4.0"
+# Serialisasi/Deserialisasi
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0" # Untuk respons JSON sederhana
+# MongoDB Driver
+mongodb = "3.4.1" 
+bson = "2.15.0"
